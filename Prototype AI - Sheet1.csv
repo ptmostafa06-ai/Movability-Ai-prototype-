@@ -1,0 +1,10 @@
+age ,Gender ,diagnosis ,GMFCS ,pelvic tilt ,seating risk level 
+8,male,bilateral  mixed cerebral plasy ,IV,posterior ,high
+45,female,non traumatic subarachnoid hemorrhage ,I,neutral,low
+5,male,spinal muscular atrophy ,N/A,anterior,high
+11,female,dystonic cerebral palsy ,IV,posterior ,high
+12,male ,bilateral cerebral palsy ,III,anterior,moderate
+3,male,general muscle weakness ,I,neutral ,low
+6,female ,hypotonic  cerebral palsy ,II,posterior ,moderate
+30,female ,bilateral spastic cerebral palsy ,II,anterior,moderate
+15,female ,dystonic cerebral palsy ,V,posteriorr,high 
