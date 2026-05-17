@@ -14,14 +14,17 @@ df = pd.read_csv("Prototype AI - Sheet1.csv")
 encoders = {}
 
 for column in df.columns:
-    le = LabelEncoder()
-X = df.drop('Seating Risk Level', axis=1)    encoders[column] = le
+    if df[column].dtype == 'object':
+        le = LabelEncoder()
+        df[column] = le.fit_transform(df[column])
+        encoders[column] = le
 
 # =========================
 # FEATURES & TARGET
 # =========================
-X = df.drop('seating risk level', axis=1)
+X = df.drop('Seating Risk Level', axis=1)
 y = df['Seating Risk Level']
+
 # =========================
 # TRAIN MODEL
 # =========================
@@ -35,7 +38,9 @@ st.title("MovAbility AI Prototype")
 
 st.write("Adaptive Seating Risk Prediction Prototype")
 
+# =========================
 # USER INPUTS
+# =========================
 age = st.number_input("Age", min_value=0, max_value=100, value=5)
 
 gender = st.selectbox(
@@ -82,7 +87,7 @@ if st.button("Predict Seating Risk"):
     prediction = model.predict(input_data)[0]
 
     # DECODE RESULT
-    prediction_label = encoders['seating risk level'].inverse_transform([prediction])[0]
+    prediction_label = encoders['Seating Risk Level'].inverse_transform([prediction])[0]
 
     # SHOW RESULT
     st.success(f"Predicted Seating Risk Level: {prediction_label}")
