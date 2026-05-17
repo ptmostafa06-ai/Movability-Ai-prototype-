@@ -3,86 +3,80 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 
-# LOAD DATA
-df = pd.read_csv("Prototype AI - Sheet1.csv")
-
-# CLEAN COLUMN NAMES
-df.columns = df.columns.str.strip().str.lower()
-
-# TARGET COLUMN
-target_column = "seating risk level"
-
-# ENCODE DATA
-encoders = {}
-
-for column in df.columns:
-    if df[column].dtype == "object":
-        le = LabelEncoder()
-        df[column] = le.fit_transform(df[column])
-        encoders[column] = le
-
-# FEATURES & TARGET
-X = df.drop(target_column, axis=1)
-y = df[target_column]
-
-# TRAIN MODEL
-model = RandomForestClassifier()
-model.fit(X, y)
-
-# STREAMLIT UI
 st.title("MovAbility AI Prototype")
 st.write("Adaptive Seating Risk Prediction Prototype")
 
-# USER INPUTS
-age = st.number_input("Age", min_value=0, max_value=100, value=5)
+# Load data
+df = pd.read_csv("Prototype AI - Sheet1.csv")
 
-gender = st.selectbox(
-    "Gender",
-    encoders["gender"].classes_
-)
+# Clean column names
+df.columns = df.columns.str.strip().str.lower()
 
-diagnosis = st.selectbox(
-    "Diagnosis",
-    encoders["diagnosis"].classes_
-)
+target_column = "seating risk level"
 
-gmfcs = st.selectbox(
-    "GMFCS",
-    encoders["gmfcs"].classes_
-)
+if target_column not in df.columns:
+    st.error("Column 'seating risk level' not found in CSV file.")
+    st.write("Available columns are:")
+    st.write(list(df.columns))
+    st.stop()
 
-pelvic_tilt = st.selectbox(
-    "Pelvic Tilt",
-    encoders["pelvic tilt"].classes_
-)
+# Remove empty rows
+df = df.dropna(how="all")
 
-# PREDICT BUTTON
+# Fill missing values
+for col in df.columns:
+    if df[col].dtype == "object":
+        df[col] = df[col].fillna("Unknown")
+    else:
+        df[col] = df[col].fillna(df[col].median())
+
+# Encode categorical columns
+encoders = {}
+
+for col in df.columns:
+    if df[col].dtype == "object":
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col].astype(str))
+        encoders[col] = le
+
+# Features and target
+X = df.drop(target_column, axis=1)
+y = df[target_column]
+
+# Train model
+model = RandomForestClassifier(random_state=42)
+model.fit(X, y)
+
+st.subheader("Enter patient information")
+
+user_input = {}
+
+for col in X.columns:
+    if col in encoders:
+        selected = st.selectbox(col.title(), encoders[col].classes_)
+        user_input[col] = encoders[col].transform([selected])[0]
+    else:
+        user_input[col] = st.number_input(col.title(), value=float(df[col].median()))
+
+input_data = pd.DataFrame([user_input])
+
 if st.button("Predict Seating Risk"):
-
-    gender_encoded = encoders["gender"].transform([gender])[0]
-    diagnosis_encoded = encoders["diagnosis"].transform([diagnosis])[0]
-    gmfcs_encoded = encoders["gmfcs"].transform([gmfcs])[0]
-    pelvic_encoded = encoders["pelvic tilt"].transform([pelvic_tilt])[0]
-
-    input_data = pd.DataFrame([[
-        age,
-        gender_encoded,
-        diagnosis_encoded,
-        gmfcs_encoded,
-        pelvic_encoded
-    ]], columns=X.columns)
-
     prediction = model.predict(input_data)[0]
 
-    prediction_label = encoders[target_column].inverse_transform([prediction])[0]
+    if target_column in encoders:
+        prediction_label = encoders[target_column].inverse_transform([prediction])[0]
+    else:
+        prediction_label = prediction
 
     st.success(f"Predicted Seating Risk Level: {prediction_label}")
 
-    if prediction_label.lower() == "high":
+    prediction_text = str(prediction_label).lower()
+
+    if prediction_text == "high":
         st.error("Clinical Interpretation: High seating/postural risk detected.")
         st.write("Recommended Action: Full adaptive seating assessment is recommended.")
 
-    elif prediction_label.lower() == "moderate":
+    elif prediction_text == "moderate":
         st.warning("Clinical Interpretation: Moderate seating/postural risk detected.")
         st.write("Recommended Action: Monitor posture and reassess regularly.")
 
