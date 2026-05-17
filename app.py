@@ -15,15 +15,13 @@ encoders = {}
 
 for column in df.columns:
     le = LabelEncoder()
-    df[column] = le.fit_transform(df[column].astype(str))
-    encoders[column] = le
+X = df.drop('Seating Risk Level', axis=1)    encoders[column] = le
 
 # =========================
 # FEATURES & TARGET
 # =========================
 X = df.drop('seating risk level', axis=1)
-y = df['seating risk level']
-
+y = df['Seating Risk Level']
 # =========================
 # TRAIN MODEL
 # =========================
