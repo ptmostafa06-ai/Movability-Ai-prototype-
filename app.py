@@ -1,110 +1,142 @@
 import streamlit as st
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 
 st.title("SeatMind AI Prototype")
 st.write("Predictive Seating & Positioning Intelligence")
 
-st.subheader("Enter patient information")
+st.caption("Prototype screening tool for seating and postural risk. This does not replace clinical assessment.")
 
-age = st.number_input("Age", min_value=0, max_value=100, value=5)
+# Load dataset
+df = pd.read_csv("Prototype AI - Sheet1.csv")
 
-gender = st.selectbox("Gender", ["Male", "Female"])
+# Clean column names
+df.columns = df.columns.str.strip()
 
-diagnosis = st.selectbox(
-    "Diagnosis",
-    ["Cerebral Palsy", "Spina Bifida", "Muscular Dystrophy", "Developmental Delay", "Other"]
+target_col = "predicted_seating_postural_risk_level"
+
+# Encode dataset
+encoders = {}
+
+for column in df.columns:
+    le = LabelEncoder()
+    df[column] = le.fit_transform(df[column].astype(str).str.strip().str.lower())
+    encoders[column] = le
+
+# Features and target
+X = df.drop(target_col, axis=1)
+y = df[target_col]
+
+# Train model
+model = RandomForestClassifier(random_state=42)
+model.fit(X, y)
+
+st.subheader("Enter child seating information")
+
+age = st.number_input("Age", min_value=0.0, max_value=100.0, value=5.0)
+
+gender = st.selectbox("Gender", encoders["Gender"].classes_)
+
+current_seating_setup = st.selectbox(
+    "Current Seating Setup",
+    encoders["current_seating_setup"].classes_
 )
 
-gmfcs = st.selectbox("GMFCS", ["I", "II", "III", "IV", "V"])
-
-pelvic_alignment = st.multiselect(
-    "Pelvic Alignment",
-    ["Neutral", "Anterior Tilt", "Posterior Tilt", "Obliquity", "Rotation"],
-    default=["Neutral"]
+mobility_level = st.selectbox(
+    "Mobility Level",
+    encoders["mobility_level"].classes_
 )
 
-trunk_control = st.selectbox("Trunk Control", ["Good", "Moderate", "Poor"])
+sitting_support_level = st.selectbox(
+    "Sitting Support Level",
+    encoders["sitting_support_level"].classes_
+)
 
-head_control = st.selectbox("Head Control", ["Good", "Moderate", "Poor"])
+pelvic_alignment_while_sitting = st.selectbox(
+    "Pelvic Alignment While Sitting",
+    encoders["pelvic_alignment_while_sitting"].classes_
+)
+
+back_trunk_position_while_sitting = st.selectbox(
+    "Back / Trunk Position While Sitting",
+    encoders["back_trunk_position_while_sitting"].classes_
+)
+
+head_control_while_sitting = st.selectbox(
+    "Head Control While Sitting",
+    encoders["head_control_while_sitting"].classes_
+)
+
+body_stiffness_movement_pattern = st.selectbox(
+    "Body Stiffness / Movement Pattern",
+    encoders["body_stiffness_movement_pattern"].classes_
+)
+
+sits_stable_without_position_loss = st.selectbox(
+    "Sits Stable Without Position Loss",
+    encoders["sits_stable_without_position_loss"].classes_
+)
+
+ability_to_adjust_position_independently = st.selectbox(
+    "Ability to Adjust Position Independently",
+    encoders["ability_to_adjust_position_independently"].classes_
+)
+
+sitting_endurance = st.selectbox(
+    "Sitting Endurance",
+    encoders["sitting_endurance"].classes_
+)
+
+pain_or_discomfort_during_sitting = st.selectbox(
+    "Pain or Discomfort During Sitting",
+    encoders["pain_or_discomfort_during_sitting"].classes_
+)
+
+skin_redness_pressure_history = st.selectbox(
+    "Skin Redness / Pressure History",
+    encoders["skin_redness_pressure_history"].classes_
+)
 
 if st.button("Predict Seating Risk"):
 
-    risk_score = 0
-    reasons = []
+    input_data = pd.DataFrame([{
+        "age": age,
+        "Gender": gender,
+        "current_seating_setup": current_seating_setup,
+        "mobility_level": mobility_level,
+        "sitting_support_level": sitting_support_level,
+        "pelvic_alignment_while_sitting": pelvic_alignment_while_sitting,
+        "back_trunk_position_while_sitting": back_trunk_position_while_sitting,
+        "head_control_while_sitting": head_control_while_sitting,
+        "body_stiffness_movement_pattern": body_stiffness_movement_pattern,
+        "sits_stable_without_position_loss": sits_stable_without_position_loss,
+        "ability_to_adjust_position_independently": ability_to_adjust_position_independently,
+        "sitting_endurance": sitting_endurance,
+        "pain_or_discomfort_during_sitting": pain_or_discomfort_during_sitting,
+        "skin_redness_pressure_history": skin_redness_pressure_history
+    }])
 
-    if gmfcs in ["IV", "V"]:
-        risk_score += 2
-        reasons.append(f"GMFCS level {gmfcs} indicates significant mobility and postural support needs.")
-    elif gmfcs == "III":
-        risk_score += 1
-        reasons.append("GMFCS level III indicates moderate mobility limitation and seating support needs.")
+    for column in input_data.columns:
+        input_data[column] = encoders[column].transform(
+            input_data[column].astype(str).str.strip().str.lower()
+        )
 
-    if "Neutral" in pelvic_alignment and len(pelvic_alignment) == 1:
-        reasons.append("Pelvic alignment is currently neutral without significant observable asymmetry.")
+    prediction_code = model.predict(input_data)[0]
+    prediction_label = encoders[target_col].inverse_transform([prediction_code])[0]
 
-    if "Anterior Tilt" in pelvic_alignment:
-        risk_score += 1
-        reasons.append("Anterior pelvic tilt may affect spinal alignment, sitting balance, and trunk control.")
+    st.subheader("Prediction Result")
 
-    if "Posterior Tilt" in pelvic_alignment:
-        risk_score += 1
-        reasons.append("Posterior pelvic tilt may increase sacral sitting and reduce stable upright posture.")
+    if prediction_label.strip().lower() == "high":
+        st.error("Predicted Seating & Postural Risk Level: HIGH")
+        st.write("Recommended Action: A full adaptive seating and postural assessment is strongly recommended.")
 
-    if "Obliquity" in pelvic_alignment:
-        risk_score += 2
-        reasons.append("Pelvic obliquity can create asymmetric loading and increase risk of postural deformity or pressure concentration.")
+    elif prediction_label.strip().lower() == "moderate":
+        st.warning("Predicted Seating & Postural Risk Level: MODERATE")
+        st.write("Recommended Action: Seating review and close monitoring are recommended.")
 
-    if "Rotation" in pelvic_alignment:
-        risk_score += 2
-        reasons.append("Pelvic rotation can affect trunk alignment, sitting symmetry, and functional upper limb use.")
-
-    if trunk_control == "Poor":
-        risk_score += 2
-        reasons.append("Poor trunk control increases the need for external postural support.")
-    elif trunk_control == "Moderate":
-        risk_score += 1
-        reasons.append("Moderate trunk control suggests reduced sitting endurance and need for monitoring/support.")
-
-    if head_control == "Poor":
-        risk_score += 1
-        reasons.append("Poor head control may affect visual orientation, breathing, feeding, and functional participation.")
-    elif head_control == "Moderate":
-        risk_score += 1
-        reasons.append("Moderate head control may require monitoring during prolonged sitting.")
-
-    if age < 3:
-        risk_score += 1
-        reasons.append("Young age requires close monitoring because growth can quickly change seating and postural needs.")
-
-    if risk_score >= 5:
-        risk = "High"
-    elif risk_score >= 3:
-        risk = "Moderate"
     else:
-        risk = "Low"
+        st.success("Predicted Seating & Postural Risk Level: LOW")
+        st.write("Recommended Action: Continue monitoring posture, comfort, skin, and sitting tolerance.")
 
-    st.success(f"Predicted Seating Risk Level: {risk}")
-
-    st.subheader("Clinical Interpretation")
-
-    if risk == "High":
-        st.error("High seating/postural risk detected.")
-    elif risk == "Moderate":
-        st.warning("Moderate seating/postural risk detected.")
-    else:
-        st.info("Low seating/postural risk detected.")
-
-    st.write("This prediction is based on the following clinical findings:")
-
-    for reason in reasons:
-        st.write(f"- {reason}")
-
-    st.subheader("Recommended Action")
-
-    if risk == "High":
-        st.write("A comprehensive adaptive seating and mobility assessment is strongly recommended, including posture, pressure distribution, trunk support, pelvic positioning, head control, and functional sitting tolerance.")
-    elif risk == "Moderate":
-        st.write("Close monitoring and periodic reassessment are recommended to prevent progression of postural asymmetry and functional limitations.")
-    else:
-        st.write("Continue current management while monitoring posture, growth, comfort, and functional sitting performance.")
-
-    st.caption("Prototype only. This tool supports screening and decision-making but does not replace clinical assessment.")
+    st.caption("This result is generated by an early prototype model and should be interpreted by a qualified clinician.")
