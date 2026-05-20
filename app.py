@@ -72,238 +72,124 @@ for col in df.columns:
             .str.lower()
             .str.replace(" ", "_")
         )
-        df[col] = df[col].replace(["nan", "none", ""], pd.NA)
+
+        # Important: do NOT remove "none" because it is a real clinical option
+        df[col] = df[col].replace(["nan", ""], pd.NA)
 
 df["age"] = pd.to_numeric(df["age"], errors="coerce")
 
-# Fix repeated spelling / formatting issues in CSV
+# Fix CSV spelling variations
 df["skin_redness_pressure_history"] = df["skin_redness_pressure_history"].replace({
-    "no_redness_or_skin_issues": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issue": "no_redness_or_skin_issues",
-    "no_readness_or_skin_issues": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues.": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues,": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues__________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues___________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues____________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_____________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues______________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues_______________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues",
-    "no_redness_or_skin_issues________________________________________________________________________________________________________________________________________________________________________________________________________________": "no_redness_or_skin_issues"
+    "no_readness_or_skin_issues": "no_redness_or_skin_issues"
 })
 
 df = df.dropna()
-
 df["age"] = df["age"].astype(int)
 
 # =========================
-# HELPER FUNCTIONS
+# FIXED OPTIONS
 # =========================
 
+FIXED_OPTIONS = {
+    "Gender": [
+        "male",
+        "female",
+    ],
+
+    "current_seating_setup": [
+        "no_adaptive_seating_system",
+        "basic_chair_stroller_only",
+        "adaptive_seating_system",
+    ],
+
+    "mobility_level": [
+        "independent_mobility",
+        "independent_wheelchair_user",
+        "mobility_with_supervision",
+        "mobility_with_physical_support",
+        "limited_functional_mobility",
+        "pushchair_caregiver_dependent",
+    ],
+
+    "sitting_support_level": [
+        "independent_sitting",
+        "hand_support_needed",
+        "trunk_support_needed",
+        "fully_supported_sitting",
+    ],
+
+    "pelvic_alignment_while_sitting": [
+        "pelvis_mostly_neutral_centered",
+        "anterior_pelvic_tilt",
+        "posterior_pelvic_tilt",
+        "pelvic_obliquity_asymmetry",
+        "pelvic_rotation",
+        "mixed_pelvic_asymmetry",
+    ],
+
+    "back_trunk_position_while_sitting": [
+        "trunk_mostly_centered_midline",
+        "mild_leaning_or_asymmetry",
+        "clear_leaning_or_visible_curve",
+        "severe_collapse_or_fixed_asymmetry",
+    ],
+
+    "head_control_while_sitting": [
+        "good",
+        "moderate",
+        "poor",
+    ],
+
+    "body_stiffness_movement_pattern": [
+        "normal_tone",
+        "low_tone",
+        "high_tone",
+        "fluctuating_tone",
+        "dystonic_movements,mixed_tone",
+    ],
+
+    "sits_stable_without_position_loss": [
+        "sits_stable_without_position_loss",
+        "loses_position_from_time_to_time",
+        "loses_position_many_times_during_sitting",
+        "constantly_loses_position",
+    ],
+
+    "ability_to_adjust_position_independently": [
+        "independent",
+        "needs_verbal_reminders_cueing",
+        "needs_physical_assistance",
+        "unable_to_adjust_position_independently",
+    ],
+
+    "sitting_endurance": [
+        "maintains_sitting_without_fatigue",
+        "gets_tired_after_prolonged_sitting",
+        "gets_tired_shortly_after_sitting",
+        "cannot_tolerate_sitting_for_functional_activities",
+    ],
+
+    "pain_or_discomfort_during_sitting": [
+        "none",
+        "mild_discomfort",
+        "moderate_pain_discomfort",
+        "severe_pain_discomfort",
+        "unable_to_determine",
+    ],
+
+    "skin_redness_pressure_history": [
+        "no_redness_or_skin_issues",
+        "occasional_redness_after_sitting",
+        "redness_appears_from_time_to_time",
+        "previous_skin_breakdown_pressure_injury",
+    ],
+}
+
 def options_for(col):
-    values = sorted(df[col].dropna().unique().tolist())
-    return values
+    if col in FIXED_OPTIONS:
+        return FIXED_OPTIONS[col]
+
+    return sorted(df[col].dropna().unique().tolist())
 
 def pretty_label(value):
     return str(value).replace("_", " ").title()
@@ -355,11 +241,7 @@ age = st.number_input(
     format="%d"
 )
 
-gender = st.selectbox(
-    "Gender",
-    options_for("Gender"),
-    format_func=pretty_label
-)
+gender = st.selectbox("Gender", options_for("Gender"), format_func=pretty_label)
 
 current_seating_setup = st.selectbox(
     "Current Seating Setup",
@@ -445,28 +327,19 @@ def rule_based_prediction():
         score += 1
         reasons.append("Young age may require closer monitoring because growth can quickly change seating and postural needs.")
 
-    if mobility_level in [
-        "pushchair_caregiver_dependent",
-        "limited_functional_mobility"
-    ]:
+    if mobility_level in ["limited_functional_mobility", "pushchair_caregiver_dependent"]:
         score += 2
-        reasons.append("Mobility level suggests significant dependence and increased postural support needs.")
+        reasons.append("Mobility level suggests significant functional limitation and increased postural support needs.")
 
-    elif mobility_level in [
-        "mobility_with_physical_support",
-        "mobility_with_supervision"
-    ]:
+    elif mobility_level in ["mobility_with_physical_support", "mobility_with_supervision"]:
         score += 1
-        reasons.append("Mobility level suggests moderate functional limitation and seating review needs.")
+        reasons.append("Mobility level suggests mild to moderate functional limitation and seating review needs.")
 
     if sitting_support_level == "fully_supported_sitting":
         score += 2
         reasons.append("The individual requires significant external sitting support.")
 
-    elif sitting_support_level in [
-        "trunk_support_needed",
-        "hand_support_needed"
-    ]:
+    elif sitting_support_level in ["trunk_support_needed", "hand_support_needed"]:
         score += 1
         reasons.append("The individual requires external sitting support.")
 
@@ -483,41 +356,36 @@ def rule_based_prediction():
         score += 1
         reasons.append("Pelvic alignment may require monitoring during sitting.")
 
-    if back_trunk_position_while_sitting in [
-        "severe_collapse_or_fixed_asymmetry",
-        "clear_leaning_or_visible_curve"
-    ]:
+    if back_trunk_position_while_sitting == "severe_collapse_or_fixed_asymmetry":
+        score += 3
+        reasons.append("Severe trunk collapse or fixed asymmetry suggests high postural support needs.")
+
+    elif back_trunk_position_while_sitting == "clear_leaning_or_visible_curve":
         score += 2
-        reasons.append("Back/trunk posture suggests postural asymmetry or reduced trunk stability.")
+        reasons.append("Back/trunk posture suggests visible asymmetry or reduced trunk stability.")
 
     elif back_trunk_position_while_sitting == "mild_leaning_or_asymmetry":
         score += 1
         reasons.append("Mild trunk asymmetry may require seating review and monitoring.")
 
     if head_control_while_sitting == "poor":
-        score += 2
+        score += 3
         reasons.append("Poor head control may affect vision, feeding, breathing, communication, and participation.")
 
     elif head_control_while_sitting == "moderate":
         score += 1
         reasons.append("Moderate head control may require additional postural support.")
 
-    if body_stiffness_movement_pattern in [
-        "dystonic_movements,mixed_tone",
-        "fluctuating_tone"
-    ]:
+    if body_stiffness_movement_pattern in ["dystonic_movements,mixed_tone", "fluctuating_tone"]:
         score += 2
         reasons.append("Fluctuating tone or dystonic movement may create changing postural needs during sitting.")
 
-    elif body_stiffness_movement_pattern in [
-        "high_tone",
-        "low_tone"
-    ]:
+    elif body_stiffness_movement_pattern in ["high_tone", "low_tone"]:
         score += 1
         reasons.append("Tone presentation may affect postural control and sitting stability.")
 
     if sits_stable_without_position_loss == "constantly_loses_position":
-        score += 3
+        score += 4
         reasons.append("The individual constantly loses sitting position, suggesting high postural support needs.")
 
     elif sits_stable_without_position_loss == "loses_position_many_times_during_sitting":
@@ -529,53 +397,58 @@ def rule_based_prediction():
         reasons.append("The individual loses sitting position from time to time.")
 
     if ability_to_adjust_position_independently == "unable_to_adjust_position_independently":
-        score += 2
+        score += 3
         reasons.append("The individual is unable to independently correct sitting position.")
 
-    elif ability_to_adjust_position_independently in [
-        "needs_physical_assistance",
-        "needs_verbal_reminders_cueing"
-    ]:
+    elif ability_to_adjust_position_independently in ["needs_physical_assistance", "needs_verbal_reminders_cueing"]:
         score += 1
         reasons.append("The individual needs assistance or cueing to adjust sitting position.")
 
     if sitting_endurance == "cannot_tolerate_sitting_for_functional_activities":
-        score += 2
+        score += 3
         reasons.append("Very limited sitting tolerance may indicate discomfort, fatigue, poor alignment, or inadequate support.")
 
     elif sitting_endurance == "gets_tired_shortly_after_sitting":
-        score += 1
+        score += 2
         reasons.append("Reduced sitting endurance may indicate fatigue, discomfort, or inadequate support.")
 
-    if pain_or_discomfort_during_sitting in [
-        "moderate_pain_discomfort",
-        "severe_pain_discomfort"
-    ]:
-        score += 2
-        reasons.append("Pain or discomfort during sitting suggests the seating setup should be reviewed.")
+    elif sitting_endurance == "gets_tired_after_prolonged_sitting":
+        score += 1
+        reasons.append("Sitting endurance may require monitoring during prolonged functional activities.")
 
-    elif pain_or_discomfort_during_sitting in [
-        "mild_discomfort",
-        "unable_to_determine"
-    ]:
+    if pain_or_discomfort_during_sitting == "severe_pain_discomfort":
+        score += 4
+        reasons.append("Severe pain or discomfort during sitting is a major seating review indicator.")
+
+    elif pain_or_discomfort_during_sitting == "moderate_pain_discomfort":
+        score += 2
+        reasons.append("Moderate pain or discomfort during sitting suggests the seating setup should be reviewed.")
+
+    elif pain_or_discomfort_during_sitting in ["mild_discomfort", "unable_to_determine"]:
         score += 1
         reasons.append("Discomfort or unclear pain response may require monitoring and review.")
 
     if skin_redness_pressure_history == "previous_skin_breakdown_pressure_injury":
-        score += 3
+        score += 4
         reasons.append("Previous skin breakdown or pressure injury indicates increased pressure risk.")
 
-    elif skin_redness_pressure_history in [
-        "redness_appears_from_time_to_time",
-        "occasional_redness_after_sitting"
-    ]:
+    elif skin_redness_pressure_history in ["redness_appears_from_time_to_time", "occasional_redness_after_sitting"]:
         score += 2
         reasons.append("Skin redness after sitting may indicate pressure distribution risk.")
 
-    if score >= 9:
+    critical_red_flags = [
+        sits_stable_without_position_loss == "constantly_loses_position",
+        skin_redness_pressure_history == "previous_skin_breakdown_pressure_injury",
+        pain_or_discomfort_during_sitting == "severe_pain_discomfort",
+        back_trunk_position_while_sitting == "severe_collapse_or_fixed_asymmetry",
+        head_control_while_sitting == "poor",
+        ability_to_adjust_position_independently == "unable_to_adjust_position_independently",
+    ]
+
+    if score >= 12 or (score >= 9 and any(critical_red_flags)):
         return "high", score, reasons
 
-    elif score >= 5:
+    elif score >= 6:
         return "moderate", score, reasons
 
     else:
@@ -607,33 +480,12 @@ def ml_prediction():
     return str(prediction).strip().lower()
 
 # =========================
-# HYBRID DECISION
+# FINAL DECISION
 # =========================
 
-risk_order = {
-    "low": 0,
-    "moderate": 1,
-    "high": 2
-}
-
 def hybrid_decision(rule_result, ml_result):
-    rule_score = risk_order.get(rule_result, 0)
-    ml_score = risk_order.get(ml_result, 0)
-
-    # Rule-based clinical reasoning remains primary.
-    # ML can raise low to moderate, but cannot automatically push every case to high.
-    if rule_result == "high":
-        return "high"
-
-    if rule_result == "moderate" and ml_result == "high":
-        return "moderate"
-
-    if rule_result == "low" and ml_result == "high":
-        return "moderate"
-
-    if ml_score > rule_score:
-        return ml_result
-
+    # Final decision is based on clinical rule-based reasoning.
+    # ML is supportive only at this prototype stage.
     return rule_result
 
 # =========================
@@ -664,7 +516,7 @@ if st.button("Predict Seating Risk"):
 
     st.write(f"Clinical rule-based score: {clinical_score}")
     st.write(f"Rule-based result: {rule_result.upper()}")
-    st.write(f"Machine learning support result: {ml_result.upper()}")
+    st.write(f"Machine learning support result: {ml_result.upper()} — supportive only, not final decision")
 
     if reasons:
         for reason in reasons:
