@@ -4,6 +4,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
+from datetime import datetime
+import html
 
 # =========================
 # PAGE CONFIG
@@ -73,21 +75,25 @@ for col in df.columns:
             .str.replace(" ", "_")
         )
 
-        # Important: do NOT remove "none" because it is a real clinical option
         df[col] = df[col].replace(["nan", ""], pd.NA)
 
 df["age"] = pd.to_numeric(df["age"], errors="coerce")
 
-# Fix CSV spelling variations
+# Fix spelling / old value variations
 df["skin_redness_pressure_history"] = df["skin_redness_pressure_history"].replace({
-    "no_readness_or_skin_issues": "no_redness_or_skin_issues"
+    "no_readness_or_skin_issues": "no_redness_or_skin_issues",
+    "occasional_redness_after_sitting": "redness_appears_from_time_to_time",
+})
+
+df["body_stiffness_movement_pattern"] = df["body_stiffness_movement_pattern"].replace({
+    "dystonic_movements,mixed_tone": "mixed_tone"
 })
 
 df = df.dropna()
 df["age"] = df["age"].astype(int)
 
 # =========================
-# FIXED OPTIONS
+# CLINICAL BACKEND OPTIONS
 # =========================
 
 FIXED_OPTIONS = {
@@ -104,11 +110,11 @@ FIXED_OPTIONS = {
 
     "mobility_level": [
         "independent_mobility",
-        "independent_wheelchair_user",
         "mobility_with_supervision",
         "mobility_with_physical_support",
         "limited_functional_mobility",
         "pushchair_caregiver_dependent",
+        "independent_wheelchair_user",
     ],
 
     "sitting_support_level": [
@@ -145,7 +151,8 @@ FIXED_OPTIONS = {
         "low_tone",
         "high_tone",
         "fluctuating_tone",
-        "dystonic_movements,mixed_tone",
+        "dystonic_movements",
+        "mixed_tone",
     ],
 
     "sits_stable_without_position_loss": [
@@ -179,20 +186,140 @@ FIXED_OPTIONS = {
 
     "skin_redness_pressure_history": [
         "no_redness_or_skin_issues",
-        "occasional_redness_after_sitting",
         "redness_appears_from_time_to_time",
+        "redness_appears_often",
         "previous_skin_breakdown_pressure_injury",
     ],
 }
 
+# =========================
+# USER-FRIENDLY LABELS
+# =========================
+
+FRIENDLY_LABELS = {
+    "Gender": {
+        "male": "Male",
+        "female": "Female",
+    },
+
+    "current_seating_setup": {
+        "no_adaptive_seating_system": "No adaptive seating system",
+        "basic_chair_stroller_only": "Basic chair, stroller, or wheelchair only",
+        "adaptive_seating_system": "Adaptive seating system",
+    },
+
+    "mobility_level": {
+        "independent_mobility": "Moves independently",
+        "mobility_with_supervision": "Moves independently but needs supervision for safety",
+        "mobility_with_physical_support": "Moves with support from a person or device",
+        "limited_functional_mobility": "Can move only short distances or gets tired quickly",
+        "pushchair_caregiver_dependent": "Usually pushed or moved by caregiver",
+        "independent_wheelchair_user": "Uses wheelchair independently",
+    },
+
+    "sitting_support_level": {
+        "independent_sitting": "Sits independently without support",
+        "hand_support_needed": "Uses hands for balance while sitting",
+        "trunk_support_needed": "Needs back or side support",
+        "fully_supported_sitting": "Needs full body support",
+    },
+
+    "pelvic_alignment_while_sitting": {
+        "pelvis_mostly_neutral_centered": "Sits evenly / pelvis centered",
+        "anterior_pelvic_tilt": "Pelvis tilts forward",
+        "posterior_pelvic_tilt": "Pelvis tilts backward / slouched sitting",
+        "pelvic_obliquity_asymmetry": "Leans more to one side",
+        "pelvic_rotation": "Pelvis twists to one side",
+        "mixed_pelvic_asymmetry": "Combination of several pelvic positions",
+    },
+
+    "back_trunk_position_while_sitting": {
+        "trunk_mostly_centered_midline": "Trunk is mostly upright and centered",
+        "mild_leaning_or_asymmetry": "Mild leaning or asymmetry",
+        "clear_leaning_or_visible_curve": "Clear leaning or visible curve",
+        "severe_collapse_or_fixed_asymmetry": "Severe collapse or fixed asymmetry",
+    },
+
+    "head_control_while_sitting": {
+        "good": "Keeps head upright most of the time",
+        "moderate": "Sometimes loses head position",
+        "poor": "Frequently needs head support",
+    },
+
+    "body_stiffness_movement_pattern": {
+        "normal_tone": "Normal movement / tone",
+        "low_tone": "Body feels floppy or weak",
+        "high_tone": "Body feels stiff or tight",
+        "fluctuating_tone": "Tone changes between floppy and stiff",
+        "dystonic_movements": "Involuntary twisting or uncontrolled movements",
+        "mixed_tone": "Combination of different tone patterns",
+    },
+
+    "sits_stable_without_position_loss": {
+        "sits_stable_without_position_loss": "Stays in position while sitting",
+        "loses_position_from_time_to_time": "Occasionally slides or leans",
+        "loses_position_many_times_during_sitting": "Frequently loses position",
+        "constantly_loses_position": "Cannot stay in position without help",
+    },
+
+    "ability_to_adjust_position_independently": {
+        "independent": "Adjusts position independently",
+        "needs_verbal_reminders_cueing": "Needs reminders to adjust position",
+        "needs_physical_assistance": "Needs physical help to adjust position",
+        "unable_to_adjust_position_independently": "Cannot adjust position independently",
+    },
+
+    "sitting_endurance": {
+        "maintains_sitting_without_fatigue": "Sits comfortably for activities",
+        "gets_tired_after_prolonged_sitting": "Gets tired after long sitting",
+        "gets_tired_shortly_after_sitting": "Gets tired shortly after sitting",
+        "cannot_tolerate_sitting_for_functional_activities": "Cannot tolerate sitting for daily activities",
+    },
+
+    "pain_or_discomfort_during_sitting": {
+        "none": "No discomfort",
+        "mild_discomfort": "Mild discomfort",
+        "moderate_pain_discomfort": "Discomfort affects sitting",
+        "severe_pain_discomfort": "Severe pain or distress",
+        "unable_to_determine": "Not sure / unable to determine",
+    },
+
+    "skin_redness_pressure_history": {
+        "no_redness_or_skin_issues": "No redness noticed",
+        "redness_appears_from_time_to_time": "Redness appears sometimes",
+        "redness_appears_often": "Redness appears frequently",
+        "previous_skin_breakdown_pressure_injury": "Previous pressure sore or skin injury",
+    },
+}
+
+HELP_TEXT = {
+    "current_seating_setup": "Choose the closest option based on the seating used most of the time.",
+    "mobility_level": "Choose how the person usually moves during daily activities.",
+    "sitting_support_level": "Choose how much support the person needs to sit safely.",
+    "pelvic_alignment_while_sitting": "Choose the closest sitting position you usually notice.",
+    "back_trunk_position_while_sitting": "Look at the trunk from the front and back if possible.",
+    "head_control_while_sitting": "Choose what usually happens during sitting, not only for a few seconds.",
+    "body_stiffness_movement_pattern": "Choose how the body usually feels or moves during sitting and movement.",
+    "sits_stable_without_position_loss": "Choose how often the person loses position while sitting.",
+    "ability_to_adjust_position_independently": "Choose whether the person can correct their own sitting position.",
+    "sitting_endurance": "Choose how long sitting remains functional and comfortable.",
+    "pain_or_discomfort_during_sitting": "Choose based on report, facial expression, crying, or avoidance.",
+    "skin_redness_pressure_history": "Check areas under pressure after sitting, especially pelvis and thighs.",
+}
+
 def options_for(col):
-    if col in FIXED_OPTIONS:
-        return FIXED_OPTIONS[col]
+    return FIXED_OPTIONS[col]
 
-    return sorted(df[col].dropna().unique().tolist())
+def friendly_label(col, value):
+    return FRIENDLY_LABELS.get(col, {}).get(value, str(value).replace("_", " ").title())
 
-def pretty_label(value):
-    return str(value).replace("_", " ").title()
+def select_clinical_option(label, col):
+    return st.selectbox(
+        label,
+        options_for(col),
+        format_func=lambda x: friendly_label(col, x),
+        help=HELP_TEXT.get(col, None)
+    )
 
 # =========================
 # MACHINE LEARNING MODEL
@@ -231,6 +358,7 @@ model.fit(X, y)
 # =========================
 
 st.subheader("Enter Seating Information")
+st.write("Please answer based on the person’s usual sitting and mobility condition.")
 
 age = st.number_input(
     "Age",
@@ -241,79 +369,19 @@ age = st.number_input(
     format="%d"
 )
 
-gender = st.selectbox("Gender", options_for("Gender"), format_func=pretty_label)
-
-current_seating_setup = st.selectbox(
-    "Current Seating Setup",
-    options_for("current_seating_setup"),
-    format_func=pretty_label
-)
-
-mobility_level = st.selectbox(
-    "Mobility Level",
-    options_for("mobility_level"),
-    format_func=pretty_label
-)
-
-sitting_support_level = st.selectbox(
-    "Sitting Support Level",
-    options_for("sitting_support_level"),
-    format_func=pretty_label
-)
-
-pelvic_alignment_while_sitting = st.selectbox(
-    "Pelvic Alignment While Sitting",
-    options_for("pelvic_alignment_while_sitting"),
-    format_func=pretty_label
-)
-
-back_trunk_position_while_sitting = st.selectbox(
-    "Back / Trunk Position While Sitting",
-    options_for("back_trunk_position_while_sitting"),
-    format_func=pretty_label
-)
-
-head_control_while_sitting = st.selectbox(
-    "Head Control While Sitting",
-    options_for("head_control_while_sitting"),
-    format_func=pretty_label
-)
-
-body_stiffness_movement_pattern = st.selectbox(
-    "Body Stiffness / Movement Pattern",
-    options_for("body_stiffness_movement_pattern"),
-    format_func=pretty_label
-)
-
-sits_stable_without_position_loss = st.selectbox(
-    "Sits Stable Without Position Loss",
-    options_for("sits_stable_without_position_loss"),
-    format_func=pretty_label
-)
-
-ability_to_adjust_position_independently = st.selectbox(
-    "Ability to Adjust Position Independently",
-    options_for("ability_to_adjust_position_independently"),
-    format_func=pretty_label
-)
-
-sitting_endurance = st.selectbox(
-    "Sitting Endurance",
-    options_for("sitting_endurance"),
-    format_func=pretty_label
-)
-
-pain_or_discomfort_during_sitting = st.selectbox(
-    "Pain or Discomfort During Sitting",
-    options_for("pain_or_discomfort_during_sitting"),
-    format_func=pretty_label
-)
-
-skin_redness_pressure_history = st.selectbox(
-    "Skin Redness / Pressure History",
-    options_for("skin_redness_pressure_history"),
-    format_func=pretty_label
-)
+gender = select_clinical_option("Gender", "Gender")
+current_seating_setup = select_clinical_option("Current seating setup", "current_seating_setup")
+mobility_level = select_clinical_option("Mobility level", "mobility_level")
+sitting_support_level = select_clinical_option("Sitting support level", "sitting_support_level")
+pelvic_alignment_while_sitting = select_clinical_option("Pelvic alignment while sitting", "pelvic_alignment_while_sitting")
+back_trunk_position_while_sitting = select_clinical_option("Back / trunk position while sitting", "back_trunk_position_while_sitting")
+head_control_while_sitting = select_clinical_option("Head control while sitting", "head_control_while_sitting")
+body_stiffness_movement_pattern = select_clinical_option("Body stiffness / movement pattern", "body_stiffness_movement_pattern")
+sits_stable_without_position_loss = select_clinical_option("Sitting stability", "sits_stable_without_position_loss")
+ability_to_adjust_position_independently = select_clinical_option("Ability to adjust position independently", "ability_to_adjust_position_independently")
+sitting_endurance = select_clinical_option("Sitting endurance", "sitting_endurance")
+pain_or_discomfort_during_sitting = select_clinical_option("Pain or discomfort during sitting", "pain_or_discomfort_during_sitting")
+skin_redness_pressure_history = select_clinical_option("Skin redness / pressure history", "skin_redness_pressure_history")
 
 # =========================
 # RULE-BASED ENGINE
@@ -333,15 +401,15 @@ def rule_based_prediction():
 
     elif mobility_level in ["mobility_with_physical_support", "mobility_with_supervision"]:
         score += 1
-        reasons.append("Mobility level suggests mild to moderate functional limitation and seating review needs.")
+        reasons.append("Mobility level suggests mild to moderate functional limitation and possible seating review needs.")
 
     if sitting_support_level == "fully_supported_sitting":
         score += 2
-        reasons.append("The individual requires significant external sitting support.")
+        reasons.append("The person requires significant external sitting support.")
 
     elif sitting_support_level in ["trunk_support_needed", "hand_support_needed"]:
         score += 1
-        reasons.append("The individual requires external sitting support.")
+        reasons.append("The person requires external support to maintain sitting balance.")
 
     if pelvic_alignment_while_sitting in [
         "mixed_pelvic_asymmetry",
@@ -376,9 +444,9 @@ def rule_based_prediction():
         score += 1
         reasons.append("Moderate head control may require additional postural support.")
 
-    if body_stiffness_movement_pattern in ["dystonic_movements,mixed_tone", "fluctuating_tone"]:
+    if body_stiffness_movement_pattern in ["dystonic_movements", "mixed_tone", "fluctuating_tone"]:
         score += 2
-        reasons.append("Fluctuating tone or dystonic movement may create changing postural needs during sitting.")
+        reasons.append("Fluctuating tone, dystonic movement, or mixed tone may create changing postural needs during sitting.")
 
     elif body_stiffness_movement_pattern in ["high_tone", "low_tone"]:
         score += 1
@@ -386,23 +454,23 @@ def rule_based_prediction():
 
     if sits_stable_without_position_loss == "constantly_loses_position":
         score += 4
-        reasons.append("The individual constantly loses sitting position, suggesting high postural support needs.")
+        reasons.append("The person constantly loses sitting position, suggesting high postural support needs.")
 
     elif sits_stable_without_position_loss == "loses_position_many_times_during_sitting":
         score += 2
-        reasons.append("The individual loses position many times during sitting.")
+        reasons.append("The person loses position many times during sitting.")
 
     elif sits_stable_without_position_loss == "loses_position_from_time_to_time":
         score += 1
-        reasons.append("The individual loses sitting position from time to time.")
+        reasons.append("The person loses sitting position from time to time.")
 
     if ability_to_adjust_position_independently == "unable_to_adjust_position_independently":
         score += 3
-        reasons.append("The individual is unable to independently correct sitting position.")
+        reasons.append("The person is unable to independently correct sitting position.")
 
     elif ability_to_adjust_position_independently in ["needs_physical_assistance", "needs_verbal_reminders_cueing"]:
         score += 1
-        reasons.append("The individual needs assistance or cueing to adjust sitting position.")
+        reasons.append("The person needs assistance or cueing to adjust sitting position.")
 
     if sitting_endurance == "cannot_tolerate_sitting_for_functional_activities":
         score += 3
@@ -432,7 +500,7 @@ def rule_based_prediction():
         score += 4
         reasons.append("Previous skin breakdown or pressure injury indicates increased pressure risk.")
 
-    elif skin_redness_pressure_history in ["redness_appears_from_time_to_time", "occasional_redness_after_sitting"]:
+    elif skin_redness_pressure_history in ["redness_appears_from_time_to_time", "redness_appears_often"]:
         score += 2
         reasons.append("Skin redness after sitting may indicate pressure distribution risk.")
 
@@ -453,6 +521,105 @@ def rule_based_prediction():
 
     else:
         return "low", score, reasons
+
+# =========================
+# DYNAMIC COMPLICATIONS
+# =========================
+
+def generate_complications():
+    complications = []
+
+    if pelvic_alignment_while_sitting in [
+        "pelvic_obliquity_asymmetry",
+        "pelvic_rotation",
+        "mixed_pelvic_asymmetry",
+        "posterior_pelvic_tilt"
+    ]:
+        complications.append("Possible progression of pelvic asymmetry, spinal asymmetry, or inefficient sitting posture.")
+
+    if back_trunk_position_while_sitting in [
+        "clear_leaning_or_visible_curve",
+        "severe_collapse_or_fixed_asymmetry"
+    ]:
+        complications.append("Possible progression of trunk asymmetry, scoliosis-related concerns, or reduced upright sitting tolerance.")
+
+    if head_control_while_sitting in ["moderate", "poor"]:
+        complications.append("Reduced visual engagement, communication, feeding efficiency, breathing comfort, or participation during sitting.")
+
+    if body_stiffness_movement_pattern in [
+        "high_tone",
+        "fluctuating_tone",
+        "dystonic_movements",
+        "mixed_tone"
+    ]:
+        complications.append("Changing tone or involuntary movements may increase positioning difficulty and risk of postural breakdown.")
+
+    if sits_stable_without_position_loss in [
+        "loses_position_many_times_during_sitting",
+        "constantly_loses_position"
+    ]:
+        complications.append("Reduced functional sitting, reduced upper limb use, increased caregiver handling, and reduced participation.")
+
+    if ability_to_adjust_position_independently in [
+        "needs_physical_assistance",
+        "unable_to_adjust_position_independently"
+    ]:
+        complications.append("Increased dependence on caregiver repositioning and increased risk of prolonged poor posture.")
+
+    if sitting_endurance in [
+        "gets_tired_shortly_after_sitting",
+        "cannot_tolerate_sitting_for_functional_activities"
+    ]:
+        complications.append("Reduced tolerance for school, work, meals, therapy, play, or daily functional activities.")
+
+    if pain_or_discomfort_during_sitting in [
+        "moderate_pain_discomfort",
+        "severe_pain_discomfort"
+    ]:
+        complications.append("Pain or discomfort may reduce sitting tolerance, participation, mood, and daily function.")
+
+    if skin_redness_pressure_history in [
+        "redness_appears_from_time_to_time",
+        "redness_appears_often",
+        "previous_skin_breakdown_pressure_injury"
+    ]:
+        complications.append("Increased risk of pressure injury or skin breakdown if pressure is not managed properly.")
+
+    if mobility_level in [
+        "limited_functional_mobility",
+        "pushchair_caregiver_dependent"
+    ]:
+        complications.append("Reduced independent mobility may increase sitting time and pressure/postural management needs.")
+
+    return list(dict.fromkeys(complications))
+
+# =========================
+# RECOMMENDATIONS
+# =========================
+
+def get_recommendations(final_result):
+    if final_result == "high":
+        return [
+            "Comprehensive adaptive seating and postural assessment is strongly recommended.",
+            "Review pelvis, trunk, head support, pressure distribution, and sitting tolerance.",
+            "Consider pressure mapping and equipment reassessment where available.",
+            "Seek professional seating and mobility guidance as soon as possible."
+        ]
+
+    elif final_result == "moderate":
+        return [
+            "Professional seating review is recommended.",
+            "Monitor posture, comfort, skin condition, and sitting endurance.",
+            "Review current seating setup and consider adjustment if function or posture is affected.",
+            "Reassess if symptoms increase or sitting tolerance decreases."
+        ]
+
+    else:
+        return [
+            "Continue monitoring posture, comfort, skin condition, and sitting tolerance.",
+            "Repeat screening if there is growth, change in function, new pain, skin redness, or change in equipment.",
+            "Routine seating review may still be useful as part of long-term postural care."
+        ]
 
 # =========================
 # ML PREDICTION
@@ -489,42 +656,236 @@ def hybrid_decision(rule_result, ml_result):
     return rule_result
 
 # =========================
+# HTML REPORT
+# =========================
+
+def make_list_html(items):
+    if not items:
+        return "<li>No major risk indicators were selected based on the current input.</li>"
+    return "".join([f"<li>{html.escape(item)}</li>" for item in items])
+
+def make_answers_html():
+    answers = {
+        "Age": str(age),
+        "Gender": friendly_label("Gender", gender),
+        "Current seating setup": friendly_label("current_seating_setup", current_seating_setup),
+        "Mobility level": friendly_label("mobility_level", mobility_level),
+        "Sitting support level": friendly_label("sitting_support_level", sitting_support_level),
+        "Pelvic alignment while sitting": friendly_label("pelvic_alignment_while_sitting", pelvic_alignment_while_sitting),
+        "Back / trunk position while sitting": friendly_label("back_trunk_position_while_sitting", back_trunk_position_while_sitting),
+        "Head control while sitting": friendly_label("head_control_while_sitting", head_control_while_sitting),
+        "Body stiffness / movement pattern": friendly_label("body_stiffness_movement_pattern", body_stiffness_movement_pattern),
+        "Sitting stability": friendly_label("sits_stable_without_position_loss", sits_stable_without_position_loss),
+        "Ability to adjust position independently": friendly_label("ability_to_adjust_position_independently", ability_to_adjust_position_independently),
+        "Sitting endurance": friendly_label("sitting_endurance", sitting_endurance),
+        "Pain or discomfort during sitting": friendly_label("pain_or_discomfort_during_sitting", pain_or_discomfort_during_sitting),
+        "Skin redness / pressure history": friendly_label("skin_redness_pressure_history", skin_redness_pressure_history),
+    }
+
+    rows = ""
+    for key, value in answers.items():
+        rows += f"""
+        <tr>
+            <td><strong>{html.escape(key)}</strong></td>
+            <td>{html.escape(value)}</td>
+        </tr>
+        """
+
+    return rows
+
+def generate_html_report(final_result, clinical_score, rule_result, ml_result, reasons, complications, recommendations):
+    risk_color = {
+        "low": "#198754",
+        "moderate": "#d89b00",
+        "high": "#dc3545"
+    }.get(final_result, "#333333")
+
+    report_date = datetime.now().strftime("%d %B %Y")
+
+    report_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>SeatMind AI Screening Report</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 30px;
+                color: #222;
+                line-height: 1.5;
+            }}
+            .container {{
+                max-width: 850px;
+                margin: auto;
+                border: 1px solid #ddd;
+                border-radius: 14px;
+                padding: 28px;
+            }}
+            h1 {{
+                margin-bottom: 4px;
+            }}
+            h2 {{
+                margin-top: 28px;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 6px;
+            }}
+            .subtitle {{
+                color: #555;
+                margin-top: 0;
+            }}
+            .risk-box {{
+                border-radius: 12px;
+                padding: 18px;
+                background: #f7f7f7;
+                border-left: 8px solid {risk_color};
+                margin: 20px 0;
+            }}
+            .risk {{
+                font-size: 28px;
+                font-weight: bold;
+                color: {risk_color};
+                text-transform: uppercase;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }}
+            td {{
+                border: 1px solid #ddd;
+                padding: 10px;
+                vertical-align: top;
+            }}
+            ul {{
+                padding-left: 22px;
+            }}
+            .disclaimer {{
+                background: #fff3cd;
+                border: 1px solid #ffeeba;
+                padding: 14px;
+                border-radius: 10px;
+                margin-top: 20px;
+            }}
+            .contact {{
+                background: #f2f6ff;
+                padding: 14px;
+                border-radius: 10px;
+                margin-top: 20px;
+            }}
+            @media print {{
+                body {{
+                    margin: 0;
+                }}
+                .container {{
+                    border: none;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>SeatMind AI Screening Report</h1>
+            <p class="subtitle">Seating & Postural Risk Screening Tool</p>
+            <p><strong>Date:</strong> {html.escape(report_date)}</p>
+
+            <div class="risk-box">
+                <p><strong>Final Screening Result:</strong></p>
+                <div class="risk">{html.escape(final_result.upper())} RISK</div>
+                <p><strong>Clinical rule-based score:</strong> {clinical_score}</p>
+                <p><strong>Rule-based result:</strong> {html.escape(rule_result.upper())}</p>
+                <p><strong>Machine learning support result:</strong> {html.escape(ml_result.upper())} — supportive only, not final decision</p>
+            </div>
+
+            <h2>Person Information & Selected Answers</h2>
+            <table>
+                {make_answers_html()}
+            </table>
+
+            <h2>Clinical Reasoning</h2>
+            <ul>
+                {make_list_html(reasons)}
+            </ul>
+
+            <h2>Potential Complications</h2>
+            <ul>
+                {make_list_html(complications)}
+            </ul>
+
+            <h2>Recommended Next Step</h2>
+            <ul>
+                {make_list_html(recommendations)}
+            </ul>
+
+            <div class="disclaimer">
+                <strong>Disclaimer:</strong><br>
+                This is an early screening and decision-support tool. It does not replace a full professional seating and mobility assessment.
+            </div>
+
+            <div class="contact">
+                <strong>Professional Guidance:</strong><br>
+                Mostafa Ahmed<br>
+                Adaptive Seating Specialist & Senior Physiotherapist<br>
+                Instagram: @movability1
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    return report_html
+
+# =========================
 # FINAL OUTPUT
 # =========================
 
-if st.button("Predict Seating Risk"):
+if st.button("Generate Screening Report"):
 
     rule_result, clinical_score, reasons = rule_based_prediction()
     ml_result = ml_prediction()
     final_result = hybrid_decision(rule_result, ml_result)
 
-    st.subheader("Prediction Result")
+    complications = generate_complications()
+    recommendations = get_recommendations(final_result)
+
+    st.markdown("---")
+    st.subheader("SeatMind AI Screening Report")
 
     if final_result == "high":
-        st.error("Seating & Postural Risk Level: HIGH")
-        st.write("Recommended Action: A comprehensive adaptive seating and postural assessment is strongly recommended.")
-
+        st.error("Final Screening Result: HIGH RISK")
     elif final_result == "moderate":
-        st.warning("Seating & Postural Risk Level: MODERATE")
-        st.write("Recommended Action: Seating review and close monitoring are recommended.")
-
+        st.warning("Final Screening Result: MODERATE RISK")
     else:
-        st.success("Seating & Postural Risk Level: LOW")
-        st.write("Recommended Action: Continue monitoring posture, comfort, skin condition, and sitting tolerance.")
+        st.success("Final Screening Result: LOW RISK")
 
-    st.subheader("Why this result?")
-
+    st.markdown("### Screening Summary")
     st.write(f"Clinical rule-based score: {clinical_score}")
     st.write(f"Rule-based result: {rule_result.upper()}")
     st.write(f"Machine learning support result: {ml_result.upper()} — supportive only, not final decision")
 
+    st.markdown("### Person Information")
+    st.write(f"Age: {age}")
+    st.write(f"Gender: {friendly_label('Gender', gender)}")
+
+    st.markdown("### Clinical Reasoning")
     if reasons:
         for reason in reasons:
             st.write(f"- {reason}")
     else:
         st.write("- No major seating or postural risk indicators were selected based on the current input.")
 
-    st.markdown("---")
+    st.markdown("### Potential Complications")
+    if complications and final_result in ["moderate", "high"]:
+        for item in complications:
+            st.write(f"- {item}")
+    elif final_result == "low":
+        st.write("- No major complications were identified based on the current screening answers.")
+    else:
+        st.write("- No specific complication indicators were selected based on the current input.")
+
+    st.markdown("### Recommended Next Step")
+    for item in recommendations:
+        st.write(f"- {item}")
 
     st.warning(
         "This is an early screening and decision-support tool. "
@@ -535,10 +896,26 @@ if st.button("Predict Seating Risk"):
         """
         ### Need Clinical Assessment or Professional Guidance?
 
-        For adaptive seating, posture, mobility, and positioning consultation:
+        **Mostafa Ahmed**  
+        Adaptive Seating Specialist & Senior Physiotherapist  
 
-        **Contact Mostafa Ahmed (Mostafa Physio)**
-
-        📲 [Open Instagram Page](https://www.instagram.com/mostafaphysio?igsh=M2d3ZjMzOTFxb3M5&utm_source=qr)
+        📲 Instagram: [@movability1](https://www.instagram.com/movability1/)
         """
+    )
+
+    report_html = generate_html_report(
+        final_result=final_result,
+        clinical_score=clinical_score,
+        rule_result=rule_result,
+        ml_result=ml_result,
+        reasons=reasons,
+        complications=complications if final_result in ["moderate", "high"] else ["No major complications were identified based on the current screening answers."],
+        recommendations=recommendations
+    )
+
+    st.download_button(
+        label="Download Screening Report",
+        data=report_html,
+        file_name="SeatMind_AI_Screening_Report.html",
+        mime="text/html"
     )
