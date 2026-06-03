@@ -778,8 +778,8 @@ def generate_html_report(
         "high": "#dc3545",
     }.get(final_result, "#333333")
 
-    report_date = datetime.now().strftime("%d %B %Y")
-    instagram_url = "https://www.instagram.com/mostafaphysio?igsh=M2d3ZjMzOTFxb3M5&utm_source=qr"
+report_date = datetime.now().strftime("%d %B %Y - %H:%M:%S")
+instagram_url = "https://www.instagram.com/mostafaphysio?igsh=M2d3ZjMzOTFxb3M5&utm_source=qr"
 
     return f"""
     <!DOCTYPE html>
