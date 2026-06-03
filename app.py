@@ -15,9 +15,7 @@ st.set_page_config(page_title="SeatMind AI", page_icon="🧠", layout="centered"
 
 st.title("SeatMind AI")
 st.write("Hybrid Predictive Seating & Positioning Intelligence")
-st.write(
-    "This prototype combines rule-based clinical reasoning with a supportive machine learning layer."
-)
+st.write("Rule-based clinical safety engine with supportive machine learning output.")
 
 # =========================
 # LOAD DATA
@@ -28,10 +26,7 @@ CSV_FILE = "Prototype AI - Sheet1.csv"
 try:
     df = pd.read_csv(CSV_FILE)
 except FileNotFoundError:
-    st.error(
-        "CSV file not found. Please make sure the file name is exactly: "
-        "Prototype AI - Sheet1.csv"
-    )
+    st.error("CSV file not found. Please make sure the file name is exactly: Prototype AI - Sheet1.csv")
     st.stop()
 
 df.columns = df.columns.str.strip()
@@ -257,14 +252,11 @@ preprocessor = ColumnTransformer(
 model = Pipeline(
     steps=[
         ("preprocessor", preprocessor),
-        (
-            "classifier",
-            RandomForestClassifier(
-                n_estimators=300,
-                random_state=42,
-                class_weight="balanced",
-            ),
-        ),
+        ("classifier", RandomForestClassifier(
+            n_estimators=300,
+            random_state=42,
+            class_weight="balanced",
+        )),
     ]
 )
 
@@ -314,12 +306,14 @@ if pelvic_selected_labels == [pelvis_default_normal]:
     pelvic_selected_values = ["pelvis_mostly_neutral_centered"]
     pelvic_alignment_while_sitting = "pelvis_mostly_neutral_centered"
     pelvic_label = pelvis_default_normal
+
 elif len(pelvic_selected_labels) == 1:
     pelvic_selected_values = [
         OPTIONS["Pelvic alignment while sitting"][pelvic_selected_labels[0]]
     ]
     pelvic_alignment_while_sitting = pelvic_selected_values[0]
     pelvic_label = pelvic_selected_labels[0]
+
 else:
     pelvic_selected_values = [
         OPTIONS["Pelvic alignment while sitting"][label]
@@ -338,254 +332,252 @@ pain_or_discomfort_during_sitting, pain_label = choose("Pain or discomfort durin
 skin_redness_pressure_history, skin_label = choose("Skin redness / pressure history")
 
 # =========================
-# RULE-BASED ENGINE
+# RULE ENGINE: LOW / HIGH / OTHERWISE MODERATE
 # =========================
 
 def rule_based_prediction():
-    score = 0
     reasons = []
     key_areas = []
 
-    if age < 3:
-        score += 1
-        reasons.append(
-            "Young age may require closer monitoring because growth can quickly change seating and postural needs."
-        )
-        key_areas.append("Growth monitoring")
+    mild_findings = []
+    moderate_findings = []
+    severe_findings = []
 
-    if current_seating_setup == "no_adaptive_seating_system":
-        score += 1
-        reasons.append(
-            "No adaptive seating system is currently used, which may limit postural support and pressure management."
-        )
-        key_areas.append("Seating setup")
-
-    elif current_seating_setup == "basic_chair_stroller_only":
-        score += 1
-        reasons.append(
-            "A basic chair, stroller, or wheelchair may provide limited individualized postural support."
-        )
-        key_areas.append("Seating setup")
-
-    if mobility_level in ["limited_functional_mobility", "pushchair_caregiver_dependent"]:
-        score += 2
-        reasons.append(
-            "Mobility level suggests significant functional limitation and increased postural support needs."
-        )
-        key_areas.append("Mobility")
-
-    elif mobility_level in ["mobility_with_physical_support", "mobility_with_supervision"]:
-        score += 1
-        reasons.append(
-            "Mobility level suggests mild to moderate functional limitation and possible seating review needs."
-        )
-        key_areas.append("Mobility")
-
-    if sitting_support_level == "fully_supported_sitting":
-        score += 2
-        reasons.append("The person requires significant external sitting support.")
-        key_areas.append("Sitting support")
-
-    elif sitting_support_level in ["trunk_support_needed", "hand_support_needed"]:
-        score += 1
-        reasons.append("The person requires external support to maintain sitting balance.")
-        key_areas.append("Sitting support")
-
-    # Pelvis multi-selection scoring
     pelvis_problem_values = [
         v for v in pelvic_selected_values
         if v != "pelvis_mostly_neutral_centered"
     ]
 
+    # -------------------------
+    # Mild / moderate / severe findings
+    # -------------------------
+
+    if age < 3:
+        mild_findings.append("young_age")
+        reasons.append("Young age may require closer monitoring because growth can quickly change seating and postural needs.")
+        key_areas.append("Growth monitoring")
+
+    if mobility_level in ["mobility_with_supervision", "mobility_with_physical_support"]:
+        mild_findings.append("mobility_support")
+        reasons.append("Mobility level suggests mild functional limitation and possible seating review needs.")
+        key_areas.append("Mobility")
+
+    elif mobility_level in ["limited_functional_mobility", "pushchair_caregiver_dependent"]:
+        moderate_findings.append("limited_mobility")
+        reasons.append("Mobility level suggests significant functional limitation and increased postural support needs.")
+        key_areas.append("Mobility")
+
+    if sitting_support_level in ["hand_support_needed", "trunk_support_needed"]:
+        mild_findings.append("sitting_support_needed")
+        reasons.append("The person requires external support to maintain sitting balance.")
+        key_areas.append("Sitting support")
+
+    elif sitting_support_level == "fully_supported_sitting":
+        moderate_findings.append("fully_supported_sitting")
+        reasons.append("The person requires significant external sitting support.")
+        key_areas.append("Sitting support")
+
     if len(pelvis_problem_values) == 1:
         if "anterior_pelvic_tilt" in pelvis_problem_values:
-            score += 1
-            reasons.append(
-                "Anterior pelvic tilt was selected, which may affect sitting alignment, trunk control, and comfort."
-            )
+            mild_findings.append("anterior_pelvic_tilt")
+            reasons.append("Anterior pelvic tilt was selected, which may affect sitting alignment, trunk control, and comfort.")
+
         elif "posterior_pelvic_tilt" in pelvis_problem_values:
-            score += 2
-            reasons.append(
-                "Posterior pelvic tilt or slouched sitting was selected, which may affect pressure distribution, trunk posture, and functional sitting."
-            )
+            moderate_findings.append("posterior_pelvic_tilt")
+            reasons.append("Posterior pelvic tilt or slouched sitting was selected, which may affect pressure distribution, trunk posture, and functional sitting.")
+
         elif "pelvic_obliquity_asymmetry" in pelvis_problem_values:
-            score += 2
-            reasons.append(
-                "Pelvic obliquity or side leaning was selected, which may affect weight distribution and spinal alignment."
-            )
+            moderate_findings.append("pelvic_obliquity")
+            reasons.append("Pelvic obliquity or side leaning was selected, which may affect weight distribution and spinal alignment.")
+
         elif "pelvic_rotation" in pelvis_problem_values:
-            score += 2
-            reasons.append(
-                "Pelvic rotation was selected, which may affect sitting symmetry, trunk alignment, and functional positioning."
-            )
+            moderate_findings.append("pelvic_rotation")
+            reasons.append("Pelvic rotation was selected, which may affect sitting symmetry, trunk alignment, and functional positioning.")
+
         key_areas.append("Pelvis")
 
     elif len(pelvis_problem_values) >= 2:
-        score += 3
-        reasons.append(
-            "Multiple pelvic alignment concerns were selected, suggesting a mixed pelvic asymmetry pattern that may affect sitting stability, pressure distribution, and trunk alignment."
-        )
+        moderate_findings.append("mixed_pelvic_asymmetry")
+        reasons.append("Multiple pelvic alignment concerns were selected, suggesting a mixed pelvic asymmetry pattern that may affect sitting stability, pressure distribution, and trunk alignment.")
         key_areas.append("Pelvis")
 
-    if back_trunk_position_while_sitting == "severe_collapse_or_fixed_asymmetry":
-        score += 3
-        reasons.append(
-            "Severe trunk collapse or fixed asymmetry suggests high postural support needs."
-        )
-        key_areas.append("Trunk")
-
-    elif back_trunk_position_while_sitting == "clear_leaning_or_visible_curve":
-        score += 2
-        reasons.append(
-            "Back/trunk posture suggests visible asymmetry or reduced trunk stability."
-        )
-        key_areas.append("Trunk")
-
-    elif back_trunk_position_while_sitting == "mild_leaning_or_asymmetry":
-        score += 1
+    if back_trunk_position_while_sitting == "mild_leaning_or_asymmetry":
+        mild_findings.append("mild_trunk_asymmetry")
         reasons.append("Mild trunk asymmetry may require seating review and monitoring.")
         key_areas.append("Trunk")
 
-    if head_control_while_sitting == "poor":
-        score += 3
-        reasons.append(
-            "Poor head control may affect vision, feeding, breathing, communication, and participation."
-        )
-        key_areas.append("Head control")
+    elif back_trunk_position_while_sitting == "clear_leaning_or_visible_curve":
+        moderate_findings.append("clear_trunk_asymmetry")
+        reasons.append("Back/trunk posture suggests visible asymmetry or reduced trunk stability.")
+        key_areas.append("Trunk")
 
-    elif head_control_while_sitting == "moderate":
-        score += 1
+    elif back_trunk_position_while_sitting == "severe_collapse_or_fixed_asymmetry":
+        severe_findings.append("severe_trunk_collapse")
+        reasons.append("Severe trunk collapse or fixed asymmetry suggests high postural support needs.")
+        key_areas.append("Trunk")
+
+    if head_control_while_sitting == "moderate":
+        mild_findings.append("moderate_head_control")
         reasons.append("Moderate head control may require additional postural support.")
         key_areas.append("Head control")
 
-    if body_stiffness_movement_pattern in [
-        "dystonic_movements",
-        "mixed_tone",
-        "fluctuating_tone",
-    ]:
-        score += 2
-        reasons.append(
-            "Fluctuating tone, dystonic movement, or mixed tone may create changing postural needs during sitting."
-        )
-        key_areas.append("Tone / movement pattern")
+    elif head_control_while_sitting == "poor":
+        severe_findings.append("poor_head_control")
+        reasons.append("Poor head control may affect vision, feeding, breathing, communication, and participation.")
+        key_areas.append("Head control")
 
-    elif body_stiffness_movement_pattern in ["high_tone", "low_tone"]:
-        score += 1
+    if body_stiffness_movement_pattern in ["low_tone", "high_tone"]:
+        mild_findings.append("tone_affecting_posture")
         reasons.append("Tone presentation may affect postural control and sitting stability.")
         key_areas.append("Tone / movement pattern")
 
-    if sits_stable_without_position_loss == "constantly_loses_position":
-        score += 4
-        reasons.append(
-            "The person constantly loses sitting position, suggesting high postural support needs."
-        )
-        key_areas.append("Sitting stability")
+    elif body_stiffness_movement_pattern in ["fluctuating_tone", "dystonic_movements", "mixed_tone"]:
+        moderate_findings.append("complex_tone_pattern")
+        reasons.append("Fluctuating tone, dystonic movement, or mixed tone may create changing postural needs during sitting.")
+        key_areas.append("Tone / movement pattern")
 
-    elif sits_stable_without_position_loss == "loses_position_many_times_during_sitting":
-        score += 2
-        reasons.append("The person loses position many times during sitting.")
-        key_areas.append("Sitting stability")
-
-    elif sits_stable_without_position_loss == "loses_position_from_time_to_time":
-        score += 1
+    if sits_stable_without_position_loss == "loses_position_from_time_to_time":
+        mild_findings.append("occasional_position_loss")
         reasons.append("The person loses sitting position from time to time.")
         key_areas.append("Sitting stability")
 
-    if ability_to_adjust_position_independently == "unable_to_adjust_position_independently":
-        score += 3
+    elif sits_stable_without_position_loss == "loses_position_many_times_during_sitting":
+        moderate_findings.append("frequent_position_loss")
+        reasons.append("The person loses position many times during sitting.")
+        key_areas.append("Sitting stability")
+
+    elif sits_stable_without_position_loss == "constantly_loses_position":
+        severe_findings.append("constant_position_loss")
+        reasons.append("The person constantly loses sitting position, suggesting high postural support needs.")
+        key_areas.append("Sitting stability")
+
+    if ability_to_adjust_position_independently == "needs_verbal_reminders_cueing":
+        mild_findings.append("needs_repositioning_cues")
+        reasons.append("The person needs cueing to adjust sitting position.")
+        key_areas.append("Repositioning ability")
+
+    elif ability_to_adjust_position_independently == "needs_physical_assistance":
+        moderate_findings.append("needs_physical_repositioning")
+        reasons.append("The person needs physical help to adjust sitting position.")
+        key_areas.append("Repositioning ability")
+
+    elif ability_to_adjust_position_independently == "unable_to_adjust_position_independently":
+        severe_findings.append("unable_to_reposition")
         reasons.append("The person is unable to independently correct sitting position.")
         key_areas.append("Repositioning ability")
 
-    elif ability_to_adjust_position_independently in [
-        "needs_physical_assistance",
-        "needs_verbal_reminders_cueing",
-    ]:
-        score += 1
-        reasons.append("The person needs assistance or cueing to adjust sitting position.")
-        key_areas.append("Repositioning ability")
-
-    if sitting_endurance == "cannot_tolerate_sitting_for_functional_activities":
-        score += 3
-        reasons.append(
-            "Very limited sitting tolerance may indicate discomfort, fatigue, poor alignment, or inadequate support."
-        )
+    if sitting_endurance == "gets_tired_after_prolonged_sitting":
+        mild_findings.append("fatigue_after_prolonged_sitting")
+        reasons.append("Sitting endurance may require monitoring during prolonged functional activities.")
         key_areas.append("Sitting endurance")
 
     elif sitting_endurance == "gets_tired_shortly_after_sitting":
-        score += 2
-        reasons.append(
-            "Reduced sitting endurance may indicate fatigue, discomfort, or inadequate support."
-        )
+        moderate_findings.append("early_sitting_fatigue")
+        reasons.append("Reduced sitting endurance may indicate fatigue, discomfort, or inadequate support.")
         key_areas.append("Sitting endurance")
 
-    elif sitting_endurance == "gets_tired_after_prolonged_sitting":
-        score += 1
-        reasons.append(
-            "Sitting endurance may require monitoring during prolonged functional activities."
-        )
+    elif sitting_endurance == "cannot_tolerate_sitting_for_functional_activities":
+        severe_findings.append("cannot_tolerate_functional_sitting")
+        reasons.append("Very limited sitting tolerance may indicate discomfort, fatigue, poor alignment, or inadequate support.")
         key_areas.append("Sitting endurance")
 
-    if pain_or_discomfort_during_sitting == "severe_pain_discomfort":
-        score += 4
-        reasons.append(
-            "Severe pain or discomfort during sitting is a major seating review indicator."
-        )
-        key_areas.append("Pain / discomfort")
-
-    elif pain_or_discomfort_during_sitting == "moderate_pain_discomfort":
-        score += 2
-        reasons.append(
-            "Moderate pain or discomfort during sitting suggests the seating setup should be reviewed."
-        )
-        key_areas.append("Pain / discomfort")
-
-    elif pain_or_discomfort_during_sitting in ["mild_discomfort", "unable_to_determine"]:
-        score += 1
+    if pain_or_discomfort_during_sitting in ["mild_discomfort", "unable_to_determine"]:
+        mild_findings.append("mild_or_unclear_discomfort")
         reasons.append("Discomfort or unclear pain response may require monitoring and review.")
         key_areas.append("Pain / discomfort")
 
-    if skin_redness_pressure_history == "previous_skin_breakdown_pressure_injury":
-        score += 4
-        reasons.append(
-            "Previous skin breakdown or pressure injury indicates increased pressure risk."
-        )
-        key_areas.append("Pressure management")
+    elif pain_or_discomfort_during_sitting == "moderate_pain_discomfort":
+        moderate_findings.append("moderate_pain")
+        reasons.append("Moderate pain or discomfort during sitting suggests the seating setup should be reviewed.")
+        key_areas.append("Pain / discomfort")
 
-    elif skin_redness_pressure_history == "redness_appears_often":
-        score += 3
-        reasons.append(
-            "Frequent skin redness after sitting may indicate increased pressure distribution risk."
-        )
-        key_areas.append("Pressure management")
+    elif pain_or_discomfort_during_sitting == "severe_pain_discomfort":
+        severe_findings.append("severe_pain")
+        reasons.append("Severe pain or discomfort during sitting is a major seating review indicator.")
+        key_areas.append("Pain / discomfort")
 
-    elif skin_redness_pressure_history == "redness_appears_from_time_to_time":
-        score += 2
+    if skin_redness_pressure_history == "redness_appears_from_time_to_time":
+        moderate_findings.append("occasional_redness")
         reasons.append("Skin redness after sitting may indicate pressure distribution risk.")
         key_areas.append("Pressure management")
 
-    critical_red_flags = [
-        sits_stable_without_position_loss == "constantly_loses_position",
-        skin_redness_pressure_history == "previous_skin_breakdown_pressure_injury",
-        skin_redness_pressure_history == "redness_appears_often",
-        pain_or_discomfort_during_sitting == "severe_pain_discomfort",
-        back_trunk_position_while_sitting == "severe_collapse_or_fixed_asymmetry",
-        head_control_while_sitting == "poor",
-        ability_to_adjust_position_independently == "unable_to_adjust_position_independently",
-        len(pelvis_problem_values) >= 2,
-    ]
+    elif skin_redness_pressure_history == "redness_appears_often":
+        severe_findings.append("frequent_redness")
+        reasons.append("Frequent skin redness after sitting may indicate increased pressure distribution risk.")
+        key_areas.append("Pressure management")
 
-    # Final rule-based decision:
-    # 0-1 = Low
-    # 2-6 = Moderate
-    # 7+ or critical combination = High
-    if score >= 7 or (score >= 5 and any(critical_red_flags)):
-        result = "high"
-    elif score >= 2:
-        result = "moderate"
+    elif skin_redness_pressure_history == "previous_skin_breakdown_pressure_injury":
+        severe_findings.append("previous_pressure_injury")
+        reasons.append("Previous skin breakdown or pressure injury indicates increased pressure risk.")
+        key_areas.append("Pressure management")
+
+    # -------------------------
+    # Seating setup logic
+    # Basic chair alone is not a problem.
+    # It only appears when there are actual clinical concerns.
+    # -------------------------
+
+    concern_count = len(mild_findings) + len(moderate_findings) + len(severe_findings)
+
+    if current_seating_setup == "no_adaptive_seating_system" and concern_count >= 2:
+        mild_findings.append("no_adaptive_seating_with_concerns")
+        reasons.append("No adaptive seating system is used despite selected postural or functional concerns.")
+        key_areas.append("Seating setup")
+
+    elif current_seating_setup == "basic_chair_stroller_only" and concern_count >= 3:
+        reasons.append("Current basic seating may need review because other postural or functional concerns were selected.")
+        key_areas.append("Seating setup")
+
+    # -------------------------
+    # FINAL SAFETY CHECK LOGIC
+    # -------------------------
+
+    severe_count = len(severe_findings)
+    moderate_count = len(moderate_findings)
+    mild_count = len(mild_findings)
+    total_concerns = severe_count + moderate_count + mild_count
+
+    clearly_low = (
+        severe_count == 0
+        and moderate_count == 0
+        and mild_count <= 1
+    )
+
+    high_red_flag_single = any(flag in severe_findings for flag in [
+        "previous_pressure_injury",
+        "severe_pain",
+        "constant_position_loss",
+        "cannot_tolerate_functional_sitting",
+    ])
+
+    high_red_flag_combination = (
+        severe_count >= 2
+        or ("severe_trunk_collapse" in severe_findings and moderate_count >= 1)
+        or ("poor_head_control" in severe_findings and (moderate_count >= 1 or mild_count >= 2))
+        or ("unable_to_reposition" in severe_findings and moderate_count >= 2)
+        or ("frequent_redness" in severe_findings and (moderate_count >= 1 or mild_count >= 2))
+    )
+
+    clearly_high = high_red_flag_single or high_red_flag_combination
+
+    if clearly_low:
+        final_result = "low"
+    elif clearly_high:
+        final_result = "high"
     else:
-        result = "low"
+        final_result = "moderate"
 
-    return result, score, reasons, list(dict.fromkeys(key_areas))
+    clinical_score = (mild_count * 1) + (moderate_count * 2) + (severe_count * 4)
+
+    return (
+        final_result,
+        clinical_score,
+        reasons,
+        list(dict.fromkeys(key_areas)),
+        mild_findings,
+        moderate_findings,
+        severe_findings,
+    )
 
 # =========================
 # DYNAMIC POTENTIAL COMPLICATIONS
@@ -597,117 +589,61 @@ def generate_complications(final_result):
 
     complications = []
 
-    if current_seating_setup in ["no_adaptive_seating_system", "basic_chair_stroller_only"]:
-        complications.append(
-            "Limited seating support may contribute to reduced postural control, fatigue, or positioning difficulty."
-        )
-
     pelvis_problem_values = [
         v for v in pelvic_selected_values
         if v != "pelvis_mostly_neutral_centered"
     ]
 
+    if current_seating_setup == "no_adaptive_seating_system":
+        complications.append("Lack of adaptive seating may contribute to positioning difficulty when postural or functional concerns are present.")
+
+    elif current_seating_setup == "basic_chair_stroller_only":
+        complications.append("Basic seating may require review if it does not adequately support the person’s current postural needs.")
+
     if "anterior_pelvic_tilt" in pelvis_problem_values:
-        complications.append(
-            "Anterior pelvic tilt may contribute to increased lumbar extension, fatigue, discomfort, or inefficient sitting posture."
-        )
+        complications.append("Anterior pelvic tilt may contribute to increased lumbar extension, fatigue, discomfort, or inefficient sitting posture.")
 
     if "posterior_pelvic_tilt" in pelvis_problem_values:
-        complications.append(
-            "Posterior pelvic tilt may increase sacral sitting, pressure concentration, sliding, and reduced functional reach."
-        )
+        complications.append("Posterior pelvic tilt may increase sacral sitting, pressure concentration, sliding, and reduced functional reach.")
 
     if "pelvic_obliquity_asymmetry" in pelvis_problem_values:
-        complications.append(
-            "Pelvic obliquity may contribute to uneven pressure distribution, trunk asymmetry, and spinal alignment concerns."
-        )
+        complications.append("Pelvic obliquity may contribute to uneven pressure distribution, trunk asymmetry, and spinal alignment concerns.")
 
     if "pelvic_rotation" in pelvis_problem_values:
-        complications.append(
-            "Pelvic rotation may affect sitting symmetry, lower limb positioning, and functional sitting alignment."
-        )
+        complications.append("Pelvic rotation may affect sitting symmetry, lower limb positioning, and functional sitting alignment.")
 
     if len(pelvis_problem_values) >= 2:
-        complications.append(
-            "Combined pelvic asymmetry may increase the risk of postural deterioration and pressure management problems."
-        )
+        complications.append("Combined pelvic asymmetry may increase the risk of postural deterioration and pressure management problems.")
 
-    if back_trunk_position_while_sitting in [
-        "clear_leaning_or_visible_curve",
-        "severe_collapse_or_fixed_asymmetry",
-    ]:
-        complications.append(
-            "Trunk asymmetry may contribute to scoliosis-related concerns, reduced upright sitting tolerance, and reduced function."
-        )
+    if back_trunk_position_while_sitting in ["clear_leaning_or_visible_curve", "severe_collapse_or_fixed_asymmetry"]:
+        complications.append("Trunk asymmetry may contribute to scoliosis-related concerns, reduced upright sitting tolerance, and reduced function.")
 
     if head_control_while_sitting in ["moderate", "poor"]:
-        complications.append(
-            "Reduced head control may affect visual engagement, communication, feeding efficiency, breathing comfort, or participation."
-        )
+        complications.append("Reduced head control may affect visual engagement, communication, feeding efficiency, breathing comfort, or participation.")
 
-    if body_stiffness_movement_pattern in [
-        "high_tone",
-        "fluctuating_tone",
-        "dystonic_movements",
-        "mixed_tone",
-    ]:
-        complications.append(
-            "Changing tone or involuntary movements may increase positioning difficulty and risk of postural breakdown."
-        )
+    if body_stiffness_movement_pattern in ["high_tone", "fluctuating_tone", "dystonic_movements", "mixed_tone"]:
+        complications.append("Changing tone or involuntary movements may increase positioning difficulty and risk of postural breakdown.")
 
-    if sits_stable_without_position_loss in [
-        "loses_position_many_times_during_sitting",
-        "constantly_loses_position",
-    ]:
-        complications.append(
-            "Reduced sitting stability may affect upper limb use, participation, safety, and caregiver handling."
-        )
+    if sits_stable_without_position_loss in ["loses_position_many_times_during_sitting", "constantly_loses_position"]:
+        complications.append("Reduced sitting stability may affect upper limb use, participation, safety, and caregiver handling.")
 
-    if ability_to_adjust_position_independently in [
-        "needs_physical_assistance",
-        "unable_to_adjust_position_independently",
-    ]:
-        complications.append(
-            "Reduced ability to self-adjust position may increase dependence and risk of prolonged poor posture."
-        )
+    if ability_to_adjust_position_independently in ["needs_physical_assistance", "unable_to_adjust_position_independently"]:
+        complications.append("Reduced ability to self-adjust position may increase dependence and risk of prolonged poor posture.")
 
-    if sitting_endurance in [
-        "gets_tired_shortly_after_sitting",
-        "cannot_tolerate_sitting_for_functional_activities",
-    ]:
-        complications.append(
-            "Reduced sitting endurance may limit school, work, meals, therapy, play, or daily functional activities."
-        )
+    if sitting_endurance in ["gets_tired_shortly_after_sitting", "cannot_tolerate_sitting_for_functional_activities"]:
+        complications.append("Reduced sitting endurance may limit school, work, meals, therapy, play, or daily functional activities.")
 
-    if pain_or_discomfort_during_sitting in [
-        "moderate_pain_discomfort",
-        "severe_pain_discomfort",
-    ]:
-        complications.append(
-            "Pain or discomfort may reduce sitting tolerance, participation, mood, and daily function."
-        )
+    if pain_or_discomfort_during_sitting in ["moderate_pain_discomfort", "severe_pain_discomfort"]:
+        complications.append("Pain or discomfort may reduce sitting tolerance, participation, mood, and daily function.")
 
-    if skin_redness_pressure_history in [
-        "redness_appears_from_time_to_time",
-        "redness_appears_often",
-        "previous_skin_breakdown_pressure_injury",
-    ]:
-        complications.append(
-            "Skin redness or previous pressure injury may indicate increased risk of pressure injury or skin breakdown."
-        )
+    if skin_redness_pressure_history in ["redness_appears_from_time_to_time", "redness_appears_often", "previous_skin_breakdown_pressure_injury"]:
+        complications.append("Skin redness or previous pressure injury may indicate increased risk of pressure injury or skin breakdown.")
 
-    if mobility_level in [
-        "limited_functional_mobility",
-        "pushchair_caregiver_dependent",
-    ]:
-        complications.append(
-            "Reduced independent mobility may increase sitting time and pressure/postural management needs."
-        )
+    if mobility_level in ["limited_functional_mobility", "pushchair_caregiver_dependent"]:
+        complications.append("Reduced independent mobility may increase sitting time and pressure/postural management needs.")
 
     if not complications:
-        complications.append(
-            "No specific complication indicators were selected, but monitoring is still recommended based on the screening result."
-        )
+        complications.append("No specific complication indicators were selected, but monitoring is still recommended based on the screening result.")
 
     return list(dict.fromkeys(complications))
 
@@ -741,17 +677,18 @@ def get_recommendations(final_result, key_areas):
             "Routine seating review may still be useful as part of long-term postural care.",
         ])
 
-    if "Pressure management" in key_areas:
-        recommendations.append("Check skin after sitting and review pressure distribution with a qualified clinician.")
+    if final_result in ["moderate", "high"]:
+        if "Pressure management" in key_areas:
+            recommendations.append("Check skin after sitting and review pressure distribution with a qualified clinician.")
 
-    if "Pelvis" in key_areas:
-        recommendations.append("Pelvic positioning should be reviewed because pelvic alignment can influence trunk posture and pressure distribution.")
+        if "Pelvis" in key_areas:
+            recommendations.append("Pelvic positioning should be reviewed because pelvic alignment can influence trunk posture and pressure distribution.")
 
-    if "Trunk" in key_areas:
-        recommendations.append("Trunk support and midline alignment should be reviewed during sitting.")
+        if "Trunk" in key_areas:
+            recommendations.append("Trunk support and midline alignment should be reviewed during sitting.")
 
-    if "Head control" in key_areas:
-        recommendations.append("Head and upper trunk support should be considered during seating review.")
+        if "Head control" in key_areas:
+            recommendations.append("Head and upper trunk support should be considered during seating review.")
 
     return list(dict.fromkeys(recommendations))
 
@@ -785,8 +722,6 @@ def ml_prediction():
     return str(prediction).strip().lower()
 
 def hybrid_decision(rule_result, ml_result):
-    # Final decision is rule-based for clinical safety.
-    # ML is trained and displayed as supportive information only.
     return rule_result
 
 # =========================
@@ -936,8 +871,8 @@ def generate_html_report(
             <div class="risk-box">
                 <p><strong>Final Screening Result:</strong></p>
                 <div class="risk">{html.escape(final_result.upper())} RISK</div>
-                <p><strong>Clinical rule-based score:</strong> {html.escape(str(clinical_score))}</p>
-                <p><strong>Rule-based result:</strong> {html.escape(rule_result.upper())}</p>
+                <p><strong>Clinical safety score:</strong> {html.escape(str(clinical_score))}</p>
+                <p><strong>Rule-based safety result:</strong> {html.escape(rule_result.upper())}</p>
                 <p><strong>Machine learning support result:</strong> {html.escape(ml_result.upper())} — supportive only, not final decision</p>
             </div>
 
@@ -987,7 +922,16 @@ def generate_html_report(
 # =========================
 
 if st.button("Generate Screening Report"):
-    rule_result, clinical_score, reasons, key_areas = rule_based_prediction()
+    (
+        rule_result,
+        clinical_score,
+        reasons,
+        key_areas,
+        mild_findings,
+        moderate_findings,
+        severe_findings,
+    ) = rule_based_prediction()
+
     ml_result = ml_prediction()
     final_result = hybrid_decision(rule_result, ml_result)
 
@@ -1011,8 +955,8 @@ if st.button("Generate Screening Report"):
         st.success("Final Screening Result: LOW RISK")
 
     st.markdown("### Screening Summary")
-    st.write(f"Clinical rule-based score: {clinical_score}")
-    st.write(f"Rule-based result: {rule_result.upper()}")
+    st.write(f"Clinical safety score: {clinical_score}")
+    st.write(f"Rule-based safety result: {rule_result.upper()}")
     st.write(f"Machine learning support result: {ml_result.upper()} — supportive only, not final decision")
 
     st.markdown("### Person Information & Selected Answers")
