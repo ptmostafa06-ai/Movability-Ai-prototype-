@@ -349,10 +349,6 @@ def rule_based_prediction():
         if v != "pelvis_mostly_neutral_centered"
     ]
 
-    # -------------------------
-    # Mild / moderate / severe findings
-    # -------------------------
-
     if age < 3:
         mild_findings.append("young_age")
         reasons.append("Young age may require closer monitoring because growth can quickly change seating and postural needs.")
@@ -428,22 +424,28 @@ def rule_based_prediction():
         key_areas.append("Head control")
 
     if body_stiffness_movement_pattern == "high_tone":
-    mild_findings.append("high_tone")
-    reasons.append(
-        "Increased stiffness was selected, which may affect positioning, comfort, and sitting alignment."
-    )
-    key_areas.append("Tone / movement pattern")
+        mild_findings.append("high_tone")
+        reasons.append(
+            "Increased stiffness was selected, which may affect positioning, comfort, and sitting alignment."
+        )
+        key_areas.append("Tone / movement pattern")
 
-elif body_stiffness_movement_pattern == "low_tone":
-    mild_findings.append("low_tone")
-    reasons.append(
-        "Low tone was selected, which may affect postural control and upright sitting stability."
-    )
-    key_areas.append("Tone / movement pattern")
+    elif body_stiffness_movement_pattern == "low_tone":
+        mild_findings.append("low_tone")
+        reasons.append(
+            "Low tone was selected, which may affect postural control and upright sitting stability."
+        )
+        key_areas.append("Tone / movement pattern")
 
-    elif body_stiffness_movement_pattern in ["fluctuating_tone", "dystonic_movements", "mixed_tone"]:
+    elif body_stiffness_movement_pattern in [
+        "fluctuating_tone",
+        "dystonic_movements",
+        "mixed_tone",
+    ]:
         moderate_findings.append("complex_tone_pattern")
-        reasons.append("Fluctuating tone, dystonic movement, or mixed tone may create changing postural needs during sitting.")
+        reasons.append(
+            "Fluctuating tone, dystonic movement, or mixed tone may create changing postural needs during sitting."
+        )
         key_areas.append("Tone / movement pattern")
 
     if sits_stable_without_position_loss == "loses_position_from_time_to_time":
@@ -521,12 +523,6 @@ elif body_stiffness_movement_pattern == "low_tone":
         reasons.append("Previous skin breakdown or pressure injury indicates increased pressure risk.")
         key_areas.append("Pressure management")
 
-    # -------------------------
-    # Seating setup logic
-    # Basic chair alone is not a problem.
-    # It only appears when there are actual clinical concerns.
-    # -------------------------
-
     concern_count = len(mild_findings) + len(moderate_findings) + len(severe_findings)
 
     if current_seating_setup == "no_adaptive_seating_system" and concern_count >= 2:
@@ -538,14 +534,9 @@ elif body_stiffness_movement_pattern == "low_tone":
         reasons.append("Current basic seating may need review because other postural or functional concerns were selected.")
         key_areas.append("Seating setup")
 
-    # -------------------------
-    # FINAL SAFETY CHECK LOGIC
-    # -------------------------
-
     severe_count = len(severe_findings)
     moderate_count = len(moderate_findings)
     mild_count = len(mild_findings)
-    total_concerns = severe_count + moderate_count + mild_count
 
     clearly_low = (
         severe_count == 0
@@ -632,19 +623,23 @@ def generate_complications(final_result):
         complications.append("Reduced head control may affect visual engagement, communication, feeding efficiency, breathing comfort, or participation.")
 
     if body_stiffness_movement_pattern == "high_tone":
-    complications.append(
-        "Increased stiffness may make positioning more difficult and may contribute to reduced sitting comfort, postural asymmetry, or pressure concentration."
-    )
+        complications.append(
+            "Increased stiffness may make positioning more difficult and may contribute to reduced sitting comfort, postural asymmetry, or pressure concentration."
+        )
 
-elif body_stiffness_movement_pattern == "low_tone":
-    complications.append(
-        "Low tone may contribute to postural collapse, fatigue, and reduced ability to maintain upright sitting."
-    )
+    elif body_stiffness_movement_pattern == "low_tone":
+        complications.append(
+            "Low tone may contribute to postural collapse, fatigue, and reduced ability to maintain upright sitting."
+        )
 
-elif body_stiffness_movement_pattern in ["fluctuating_tone", "dystonic_movements", "mixed_tone"]:
-    complications.append(
-        "Changing tone or involuntary movements may increase positioning difficulty and risk of postural breakdown."
-    )
+    elif body_stiffness_movement_pattern in [
+        "fluctuating_tone",
+        "dystonic_movements",
+        "mixed_tone",
+    ]:
+        complications.append(
+            "Changing tone or involuntary movements may increase positioning difficulty and risk of postural breakdown."
+        )
 
     if sits_stable_without_position_loss in ["loses_position_many_times_during_sitting", "constantly_loses_position"]:
         complications.append("Reduced sitting stability may affect upper limb use, participation, safety, and caregiver handling.")
@@ -800,9 +795,7 @@ def generate_html_report(
         "high": "#dc3545",
     }.get(final_result, "#333333")
 
-    report_date = datetime.now(
-    ZoneInfo("Asia/Dubai")
-).strftime("%d %B %Y - %H:%M:%S")
+    report_date = datetime.now(ZoneInfo("Asia/Dubai")).strftime("%d %B %Y - %H:%M:%S")
     instagram_url = "https://www.instagram.com/mostafaphysio?igsh=M2d3ZjMzOTFxb3M5&utm_source=qr"
 
     return f"""
