@@ -427,10 +427,19 @@ def rule_based_prediction():
         reasons.append("Poor head control may affect vision, feeding, breathing, communication, and participation.")
         key_areas.append("Head control")
 
-    if body_stiffness_movement_pattern in ["low_tone", "high_tone"]:
-        mild_findings.append("tone_affecting_posture")
-        reasons.append("Tone presentation may affect postural control and sitting stability.")
-        key_areas.append("Tone / movement pattern")
+    if body_stiffness_movement_pattern == "high_tone":
+    mild_findings.append("high_tone")
+    reasons.append(
+        "Increased stiffness was selected, which may affect positioning, comfort, and sitting alignment."
+    )
+    key_areas.append("Tone / movement pattern")
+
+elif body_stiffness_movement_pattern == "low_tone":
+    mild_findings.append("low_tone")
+    reasons.append(
+        "Low tone was selected, which may affect postural control and upright sitting stability."
+    )
+    key_areas.append("Tone / movement pattern")
 
     elif body_stiffness_movement_pattern in ["fluctuating_tone", "dystonic_movements", "mixed_tone"]:
         moderate_findings.append("complex_tone_pattern")
@@ -622,8 +631,20 @@ def generate_complications(final_result):
     if head_control_while_sitting in ["moderate", "poor"]:
         complications.append("Reduced head control may affect visual engagement, communication, feeding efficiency, breathing comfort, or participation.")
 
-    if body_stiffness_movement_pattern in ["high_tone", "fluctuating_tone", "dystonic_movements", "mixed_tone"]:
-        complications.append("Changing tone or involuntary movements may increase positioning difficulty and risk of postural breakdown.")
+    if body_stiffness_movement_pattern == "high_tone":
+    complications.append(
+        "Increased stiffness may make positioning more difficult and may contribute to reduced sitting comfort, postural asymmetry, or pressure concentration."
+    )
+
+elif body_stiffness_movement_pattern == "low_tone":
+    complications.append(
+        "Low tone may contribute to postural collapse, fatigue, and reduced ability to maintain upright sitting."
+    )
+
+elif body_stiffness_movement_pattern in ["fluctuating_tone", "dystonic_movements", "mixed_tone"]:
+    complications.append(
+        "Changing tone or involuntary movements may increase positioning difficulty and risk of postural breakdown."
+    )
 
     if sits_stable_without_position_loss in ["loses_position_many_times_during_sitting", "constantly_loses_position"]:
         complications.append("Reduced sitting stability may affect upper limb use, participation, safety, and caregiver handling.")
